@@ -13,28 +13,24 @@
 #define SERVO_DATA_PIN D1
 
 Servo servo;
+bool operated = true;
 
 void servoPressOn() {
   servo.write(90 + 25);
-//  delay(200);
-//  servo.write(90);
+  delay(200);
+  servo.write(90);
 }
 
 void servoPressOff() {
   servo.write(90 - 25);
-//  delay(200);
-//  servo.write(90);
+  delay(200);
+  servo.write(90);
 }
 
 void onVoiceCommand(bool turnOn){ 
   Serial.printf("onVoiceCommand %d\n", turnOn);
-  digitalWrite(BUILTIN_LED, LOW);
-  if (turnOn) {
-    servoPressOn();
-  } else {
-    servoPressOff();
-  }
-  digitalWrite(BUILTIN_LED, HIGH);
+  digitalWrite(BUILTIN_LED, !turnOn);
+  operated = false;
 } 
 
 // Forward declaration from weenyMo.h
@@ -49,6 +45,10 @@ bool getAlexaState(){
 weenyMo device("Kitchen", onVoiceCommand);
            
 void setup() {
+  // Servo setup
+  servo.attach(SERVO_DATA_PIN);
+  servo.write(90);
+  
   Serial.begin(SERIAL_BAUDRATE);
   pinMode(BUILTIN_LED, OUTPUT);
   digitalWrite(BUILTIN_LED, HIGH);
@@ -58,15 +58,18 @@ void setup() {
   WiFi.waitForConnectResult();
   
   device.gotIPAddress();
-
-  // Servo setup
-  servo.attach(SERVO_DATA_PIN);
-  servo.write(0);
 }
 
 void loop() {
-//  servoPressOn();
-//  delay(1000);
-//  servoPressOff();
-//  delay(1000);  
+  // Use getAlexaState to decide whether or not to write to the servo in the event loop
+  // (outside of the async server)
+  if (operated) return;
+  bool turnOn = getAlexaState();
+  if (turnOn) {
+    servoPressOn();
+  } else {
+    servoPressOff();
+  }
+  operated = true;
+  delay(1000);
 }
