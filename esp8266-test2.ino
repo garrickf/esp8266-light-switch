@@ -14,29 +14,32 @@
 
 Servo servo;
 bool operated = true;
+bool isOn = false;
 
 void servoPressOn() {
-  servo.write(90 + 25);
+  servo.write(90 + 55); // 25-30 When glued down.
   delay(200);
   servo.write(90);
 }
 
 void servoPressOff() {
-  servo.write(90 - 25);
+  servo.write(90 - 55);
   delay(200);
   servo.write(90);
 }
 
 void onVoiceCommand(bool turnOn){ 
   Serial.printf("onVoiceCommand %d\n", turnOn);
-  digitalWrite(BUILTIN_LED, !turnOn);
+  digitalWrite(BUILTIN_LED, LOW);
+  isOn = turnOn;
   operated = false;
+  digitalWrite(BUILTIN_LED, HIGH);
 } 
 
 // Forward declaration from weenyMo.h
 bool getAlexaState(){
-  Serial.printf("getAlexaState %d\n",!digitalRead(BUILTIN_LED));
-  return !digitalRead(BUILTIN_LED);
+  Serial.printf("getAlexaState %d\n", isOn);
+  return isOn;
 }
 
 // The only constructor: const char* name, function<void(bool)> onCommand
@@ -63,9 +66,8 @@ void setup() {
 void loop() {
   // Use getAlexaState to decide whether or not to write to the servo in the event loop
   // (outside of the async server)
-  if (operated) return;
-  bool turnOn = getAlexaState();
-  if (turnOn) {
+  if (operated) return;;
+  if (isOn) {
     servoPressOn();
   } else {
     servoPressOff();
